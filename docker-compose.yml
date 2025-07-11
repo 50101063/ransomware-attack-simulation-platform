@@ -1,65 +1,54 @@
 version: '3.8'
 
 services:
-  database:
-    image: postgres:16-alpine
-    container_name: ransomware-db
-    environment:
-      POSTGRES_DB: ransomware_sim_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "5432:5432"
+      - "3000:3000"
     volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ransomware_sim_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app_network
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_BACKEND_URL=http://backend:8080 # This assumes backend runs on port 8080 inside docker network
+    depends_on:
+      - backend
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ransomware-backend
     ports:
-      - "5000:5000"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgres://user:password@database:5432/ransomware_sim_db
-      JWT_SECRET: your_jwt_secret_key # IMPORTANT: Change this in production
+      - "8080:8080" # Expose backend on port 8080
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket for backend to manage containers
-      - ./backend:/app # Mount backend source for hot-reloading (development)
+      - ./backend:/app
+      - /app/node_modules # Exclude node_modules from host mount
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - DATABASE_URL=postgresql://user:password@database:5432/ransomware_sim # Replace with actual credentials/env vars
+      - JWT_SECRET=your_jwt_secret_key # Replace with a strong secret
     depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - app_network
+      - database
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ransomware-frontend
+  database:
+    image: postgres:16
     ports:
-      - "3000:3000"
+      - "5432:5432"
     environment:
-      NODE_ENV: development
-      REACT_APP_BACKEND_URL: http://localhost:5000 # For local development, will be frontend:5000 in production setup or within Docker network
+      - POSTGRES_DB=ransomware_sim
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
     volumes:
-      - ./frontend:/app # Mount frontend source for hot-reloading (development)
-    depends_on:
-      - backend
-    networks:
-      - app_network
+      - db_data:/var/lib/postgresql/data # Persistent data volume
+      - ./database/migrations:/docker-entrypoint-initdb.d # Run migration scripts on startup
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ransomware_sim"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
-
-networks:
-  app_network:
-    driver: bridge
