@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: ransomware-db
+    environment:
+      POSTGRES_DB: ransomware_sim_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ransomware_sim_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ransomware-backend
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://user:password@database:5432/ransomware_sim_db
+      JWT_SECRET: your_jwt_secret_key # IMPORTANT: Change this in production
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket for backend to manage containers
+      - ./backend:/app # Mount backend source for hot-reloading (development)
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ransomware-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      REACT_APP_BACKEND_URL: http://localhost:5000 # For local development, will be frontend:5000 in production setup or within Docker network
+    volumes:
+      - ./frontend:/app # Mount frontend source for hot-reloading (development)
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+
+networks:
+  app_network:
+    driver: bridge
