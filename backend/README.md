@@ -1,100 +1,125 @@
 # Ransomware Attack Simulation Platform - Backend
 
-This directory contains the backend services for the Ransomware Attack Simulation Platform. It is built with Node.js, Express.js, and TypeScript, and interacts with the Docker Engine to create isolated simulation environments.
+This directory contains the backend services for the Ransomware Attack Simulation Platform. The backend is responsible for:
 
-## Technologies Used
+*   User and Role Management (Administrator, Trainee)
+*   Orchestrating isolated simulation environments using Docker
+*   Managing sample files for simulations and ensuring their safe restoration
+*   Handling "fake encryption" logic (file renaming, ransom note generation)
+*   Logging simulation events and generating reports
+*   Providing a RESTful API for the frontend
 
-*   **Node.js**: 20.x LTS
-*   **Express.js**: 4.x
-*   **TypeScript**: 5.x
-*   **Dockerode**: For Docker Engine API interaction
-*   **pg (node-postgres)**: For PostgreSQL database connectivity
-*   **bcrypt.js**: For password hashing
-*   **jsonwebtoken**: For JWT-based authentication
+## Technology Stack
 
-## Setup and Installation
+*   **Language**: TypeScript (Node.js 20.x LTS)
+*   **Framework**: Express.js 4.x
+*   **Database Client**: `pg` (node-postgres) for PostgreSQL 16.x
+*   **Docker Interaction**: `dockerode`
+*   **Authentication**: `bcrypt.js` for password hashing, `jsonwebtoken` for JWTs
 
-1.  **Prerequisites**:
-    *   Node.js (v20.x or higher) and npm installed.
-    *   Docker Desktop or Docker Engine installed and running on your machine. Ensure the Docker daemon is accessible.
-    *   A PostgreSQL database instance accessible from your environment.
+## Getting Started
 
-2.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/50101063/ransomware-attack-simulation-platform.git
-    cd ransomware-attack-simulation-platform/backend
-    ```
+Follow these instructions to set up and run the backend locally.
 
-3.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
+### Prerequisites
 
-4.  **Environment Variables**:
-    Create a `.env` file in the `backend/` directory based on the `.env.example` file.
+*   Node.js (v20.x LTS or higher)
+*   npm (comes with Node.js)
+*   Docker Desktop (or Docker Engine) installed and running
+*   PostgreSQL database instance (can be run via Docker Compose as part of the overall application stack)
 
-    ```
-    # .env
-    PORT=3000
-    DATABASE_URL="postgresql://user:password@host:port/database"
-    JWT_SECRET="your_jwt_secret_key_here"
-    ```
-    *   `PORT`: The port on which the Express server will run.
-    *   `DATABASE_URL`: Connection string for your PostgreSQL database.
-    *   `JWT_SECRET`: A strong, random secret key for signing JWTs.
+### 1. Navigate to the Backend Directory
 
-5.  **Database Setup**:
-    Ensure your PostgreSQL database is running and accessible. The application will attempt to connect to it. Database migrations (if any) will be handled separately. For initial setup, ensure the database specified in `DATABASE_URL` exists.
+```bash
+cd backend
+```
 
-## Running the Application
+### 2. Install Dependencies
 
-### Development Mode
+Install all required Node.js packages:
 
-To run the backend in development mode with live reloading:
+```bash
+npm install
+```
+
+### 3. Environment Configuration
+
+Create a `.env` file in the `backend/` directory based on the `.env.example` provided. This file will contain sensitive information and environment-specific variables.
+
+```
+# Example .env content
+PORT=3000
+DATABASE_URL="postgresql://user:password@host:port/database_name"
+JWT_SECRET="your_jwt_secret_key_here"
+# Add any other necessary environment variables
+```
+
+**Important**: Do not commit your `.env` file to version control. It is already excluded by `.gitignore`.
+
+### 4. Database Setup
+
+Ensure your PostgreSQL database is running and accessible. You will need to create the necessary tables as defined by the Solution Architect's schema. Database migration scripts will be provided in a later stage.
+
+### 5. Build the TypeScript Code
+
+Compile the TypeScript source code into JavaScript:
+
+```bash
+npm run build
+```
+
+This will output compiled JavaScript files to the `dist/` directory.
+
+### 6. Run the Application
+
+#### Development Mode (with hot-reloading)
+
+For development, you can use `ts-node-dev` for automatic restarts on code changes:
 
 ```bash
 npm run dev
 ```
 
-The server will typically run on `http://localhost:3000` (or the port specified in your `.env` file).
+#### Production Mode
 
-### Production Mode
-
-To build and run the backend for production:
+To run the compiled application:
 
 ```bash
-npm run build
 npm start
 ```
 
-## API Endpoints (Initial)
+The backend API will typically run on `http://localhost:3000` (or the port specified in your `.env` file).
 
-*   `POST /api/v1/auth/register`: Register a new user (placeholder for future implementation).
-*   `POST /api/v1/auth/login`: User login (placeholder for future implementation).
-*   `POST /api/v1/simulations/create`: Trigger the creation of a simulated environment (demonstrates Docker interaction).
-
-## Code Structure
+## Project Structure
 
 ```
 backend/
 ├── src/
-│   ├── app.ts                  # Main Express application setup
-│   ├── routes/                 # API route definitions
-│   │   ├── index.ts            # Aggregates all routes
-│   │   └── simulationRoutes.ts # Routes related to simulation management
-│   ├── controllers/            # Request handlers for routes
-│   │   └── simulationController.ts
-│   ├── services/               # Business logic and external integrations (e.g., Docker)
-│   │   └── dockerService.ts    # Handles Docker API interactions
-│   ├── db/                     # Database connection setup
-│   │   └── index.ts
-│   └── types/                  # TypeScript custom type definitions (if any)
-├── .env.example                # Example environment variables
-├── package.json                # Project dependencies and scripts
-├── tsconfig.json               # TypeScript compiler configuration
-└── README.md                   # This file
+│   ├── app.ts                 # Main Express application setup
+│   ├── config/                # Environment configuration
+│   ├── controllers/           # API request handlers
+│   ├── middleware/            # Express middleware
+│   ├── models/                # Database models/interfaces
+│   ├── routes/                # API route definitions
+│   ├── services/              # Business logic and service layer
+│   ├── utils/                 # Utility functions (e.g., Docker interaction, password hashing)
+│   └── index.ts               # Application entry point
+├── .env.example               # Example environment variables
+├── package.json               # Project dependencies and scripts
+├── tsconfig.json              # TypeScript configuration
+├── .gitignore                 # Files/directories to ignore in Git
+└── README.md                  # This file
 ```
 
-## Contributing
+## API Endpoints (Planned)
 
-Please adhere to the architectural guidelines and coding standards outlined in the main repository's `architecture/README.md`.
+*   `POST /api/v1/auth/register`
+*   `POST /api/v1/auth/login`
+*   `GET /api/v1/users`
+*   `POST /api/v1/simulations`
+*   `GET /api/v1/simulations/:id`
+*   `POST /api/v1/simulations/:id/trigger`
+*   `POST /api/v1/simulations/:id/recover`
+*   `GET /api/v1/simulations/:id/report`
+
+Further details on specific endpoints, request/response formats, and authentication will be documented as development progresses.
